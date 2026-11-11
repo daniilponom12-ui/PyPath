@@ -1598,7 +1598,6 @@ function openProject(id) {
   document.getElementById('activeProjectView').classList.remove('hidden');
   
   document.getElementById('projectTitle').textContent = p.title;
-  // ИСПОЛЬЗУЕМ innerHTML, чтобы отобразить красивые списки из guide
   document.getElementById('projectDesc').innerHTML = p.guide; 
   cmProject.setValue(p.starter);
   document.getElementById('programInputProject').value = p.testInput || '';
@@ -1618,14 +1617,13 @@ async function init() {
   setupListeners();
   setupShortcuts();
   
-  // Инициализация CodeMirror
   const editorSettings = {
     mode: "python",
     theme: document.body.classList.contains('light') ? "eclipse" : "material-darker",
     lineNumbers: true,
     autoCloseBrackets: true,
     indentUnit: 4,
-    lineWrapping: true // Отключает горизонтальную полосу прокрутки
+    lineWrapping: true 
   };
   
   cmLesson = CodeMirror.fromTextArea(document.getElementById('codeEditorLesson'), editorSettings);
