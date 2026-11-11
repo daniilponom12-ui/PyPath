@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PyPath — Учим Python с нуля</title>
+<style>
+/* --- ПРЕМИАЛЬНАЯ ЦВЕТОВАЯ ПАЛИТРА --- */
+:root {
+  --bg: #0b0e14; 
+  --panel: #151924; 
+  --panel-2: #1f2433;
+  --border: #2a3143; 
+  --text: #e2e8f0; 
+  --muted: #94a3b8;
+  --accent: #8b5cf6; 
+  --accent-hover: #a78bfa;
+  --success: #10b981; 
+  --error: #ef4444; 
+  --warning: #f59e0b;
+  --info: #3b82f6;
+  --editor-bg: #0d1117; 
+  --glass-bg: rgba(21, 25, 36, 0.75);
+}
+
+/* --- АНИМИРОВАННЫЙ ЖИВОЙ ФОН --- */
+body::before, body::after {
+  content: ''; position: fixed; border-radius: 50%; filter: blur(120px); z-index: -1;
+  animation: drift 25s infinite alternate ease-in-out;
+}
+body::before {
+  background: rgba(139, 92, 246, 0.12); width: 60vw; height: 60vw; top: -20vh; left: -10vw;
+}
+body::after {
+  background: rgba(16, 185, 129, 0.08); width: 50vw; height: 50vw; bottom: -20vh; right: -10vw; animation-delay: -12s;
+}
+
+@keyframes drift {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(8vw, 10vh) scale(1.1); }
+}
+
+/* --- АНИМАЦИИ ИНТЕРФЕЙСА --- */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pop {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes confettiFall {
+  0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(90vh) rotate(720deg); opacity: 0; }
+}
+
+/* --- БАЗА --- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh; display: flex; flex-direction: column; 
+  overflow-x: hidden;
+}
+code { font-family: "JetBrains Mono", "SF Mono", "Consolas", monospace; }
+
+/* --- СТЕКЛЯННЫЕ ПАНЕЛИ --- */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* --- ОБЛАЧКО ПРИВЕТСТВИЯ --- */
+.bubble-wrap { display: flex; align-items: flex-end; gap: 16px; margin-bottom: 24px; position: relative; min-height: 80px; animation: fadeInUp 0.6s ease forwards; }
+.speech-bubble { 
+  border-radius: 16px; padding: 16px 24px; font-size: 15px; position: relative; flex: 1; 
+  color: var(--text); line-height: 1.6; font-weight: 500;
+  animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  margin-bottom: 15px;
+}
+.speech-bubble::before { 
+  content: ''; position: absolute; bottom: -10px; left: 24px; 
+  width: 20px; height: 20px; background: var(--glass-bg);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08); border-right: 1px solid rgba(255, 255, 255, 0.08);
+  transform: rotate(45deg); backdrop-filter: blur(20px);
+}
+
+/* --- ЗАГРУЗКА --- */
+#loading { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; gap: 20px; transition: opacity 0.5s ease; }
+.spinner { width: 60px; height: 60px; border: 4px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite; }
+#loading p { font-size: 16px; font-weight: 500; }
+#loading .hint { color: var(--muted); font-size: 13px; }
+
+/* --- ШАПКА --- */
+header { padding: 16px 24px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; position: relative; z-index: 10; border-bottom: 1px solid var(--border); background: rgba(21, 25, 36, 0.8); backdrop-filter: blur(12px); }
+.logo { font-size: 22px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px; white-space: nowrap; letter-spacing: -0.5px; }
+.logo span { color: var(--accent); }
+.tabs { display: flex; gap: 4px; background: var(--panel-2); padding: 4px; border-radius: 10px; border: 1px solid var(--border); }
+.tab { background: transparent; color: var(--muted); border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; font-family: inherit; }
+.tab:hover { color: var(--text); }
+.tab.active { background: var(--panel); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+.progress-wrap { display: flex; align-items: center; gap: 12px; flex: 1; max-width: 300px; margin-left: auto;}
+.progress-bar { flex: 1; height: 6px; background: var(--panel-2); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #c4b5fd); width: 0%; transition: width 0.4s ease; border-radius: 3px; }
+#progressText { font-size: 12px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+.icon-btn { background: transparent; color: var(--muted); border: 1px solid var(--border); width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.icon-btn:hover { color: var(--text); border-color: var(--muted); background: var(--panel-2); transform: translateY(-2px); }
+
+/* --- СТАТИСТИКА --- */
+.stats { display: flex; gap: 20px; padding: 10px 24px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 500; flex-wrap: wrap; align-items: center; position: relative; z-index: 10; background: var(--panel); }
+.stats span b { color: var(--text); }
+
+/* --- ОСНОВНОЙ МАКЕТ --- */
+main { display: grid; grid-template-columns: 320px 1fr; flex: 1; min-height: 0; position: relative; z-index: 10; }
+#sidebar { background: var(--panel); border-right: 1px solid var(--border); padding: 16px 12px; overflow-y: auto; display: flex; flex-direction: column; }
+.search-wrap { padding: 0 8px 12px; }
+#searchInput { width: 100%; background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 13px; outline: none; transition: border 0.2s, box-shadow 0.2s; }
+#searchInput:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15); }
+.module-title { font-size: 11px; text-transform: uppercase; color: var(--muted); letter-spacing: 1.5px; margin: 20px 12px 8px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+.module-title .mod-count { color: var(--accent); font-size: 10px; font-weight: 700; background: rgba(139,92,246,0.1); padding: 2px 6px; border-radius: 4px; }
+.module-title:first-child { margin-top: 8px; }
+#lessonList { list-style: none; }
+#lessonList li { padding: 10px 14px; border-radius: 8px; cursor: pointer; margin-bottom: 2px; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px; transition: all 0.2s; color: var(--muted); }
+#lessonList li:hover { background: var(--panel-2); color: var(--text); transform: translateX(4px); }
+#lessonList li.active { background: rgba(139, 92, 246, 0.15); color: var(--accent); border-left: 3px solid var(--accent); border-radius: 4px 8px 8px 4px; }
+#lessonList li.done { color: var(--success); }
+#lessonList li .check { display: flex; align-items: center; justify-content: center; width: 16px; color: var(--success); font-weight: bold; }
+#lessonList li.active .check { color: var(--accent); }
+
+/* --- КОНТЕНТ --- */
+#content { padding: 40px 56px; overflow-y: auto; max-width: 1000px; margin: 0 auto; width: 100%; }
+#lessonTitle { font-size: 34px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; animation: fadeInUp 0.5s ease forwards; }
+.module-badge { display: inline-block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); background: rgba(139,92,246,0.1); padding: 4px 12px; border-radius: 20px; margin-bottom: 24px; font-weight: 700; animation: fadeInUp 0.5s ease 0.1s forwards; opacity: 0; }
+.theory { background: var(--panel); padding: 32px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 24px; line-height: 1.8; font-size: 16px; animation: fadeInUp 0.5s ease 0.2s forwards; opacity: 0; }
+.theory h3 { font-size: 20px; margin: 28px 0 16px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+.theory h3:first-child { margin-top: 0; }
+.theory p { margin-bottom: 16px; color: #cbd5e1; } 
+.theory code { background: var(--panel-2); padding: 4px 8px; border-radius: 6px; font-size: 15px; color: var(--accent-hover); border: 1px solid rgba(255,255,255,0.05); }
+.theory pre { background: var(--editor-bg); padding: 20px; border-radius: 12px; margin: 16px 0; overflow-x: auto; font-size: 15px; line-height: 1.6; border: 1px solid var(--border); color: #e2e8f0; }
+.theory ul { margin: 16px 0 20px 24px; color: #cbd5e1; } 
+.theory li { margin-bottom: 8px; }
+
+.exercise { background: linear-gradient(145deg, rgba(139,92,246,0.1), rgba(139,92,246,0.02)); border: 1px solid rgba(139,92,246,0.3); padding: 24px 32px; border-radius: 16px; margin-bottom: 24px; line-height: 1.7; animation: fadeInUp 0.5s ease 0.3s forwards; opacity: 0; }
+.exercise h3 { font-size: 18px; margin-bottom: 12px; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+.exercise b { color: var(--text); }
+.exercise .io { background: rgba(0,0,0,0.3); padding: 16px; border-radius: 8px; margin-top: 16px; font-family: "JetBrains Mono", monospace; font-size: 15px; color: #e2e8f0; border: 1px solid rgba(255,255,255,0.05); }
+
+/* --- РЕДАКТОР --- */
+.editor-wrap { 
+  border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 24px; background: var(--editor-bg); 
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+  transition: border-color 0.3s, box-shadow 0.3s;
+  animation: fadeInUp 0.5s ease 0.4s forwards; opacity: 0;
+}
+.editor-wrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2), 0 10px 30px rgba(0,0,0,0.2);
+}
+#codeEditorLesson, #codeEditorSandbox { width: 100%; min-height: 220px; background: transparent; color: #e2e8f0; border: none; padding: 24px; font-family: "JetBrains Mono", "Consolas", monospace; font-size: 15px; line-height: 1.7; resize: vertical; outline: none; }
+.editor-header { background: #090c12; padding: 14px 24px; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+.editor-header .kbd-hint { font-size: 12px; opacity: 0.7; }
+kbd { background: var(--panel-2); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; font-size: 12px; font-family: monospace; color: var(--text); box-shadow: 0 2px 0 rgba(0,0,0,0.2); }
+
+.input-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px 24px; margin-bottom: 24px; animation: fadeInUp 0.5s ease 0.5s forwards; opacity: 0; }
+.input-wrap summary { cursor: pointer; color: var(--muted); font-size: 14px; font-weight: 500; user-select: none; outline: none; transition: color 0.2s; }
+.input-wrap summary:hover { color: var(--text); }
+.input-wrap[open] summary { margin-bottom: 16px; }
+#programInputLesson, #programInputSandbox { width: 100%; min-height: 80px; background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-size: 14px; resize: vertical; outline: none; font-family: monospace; transition: border 0.2s; }
+#programInputLesson:focus, #programInputSandbox:focus { border-color: var(--accent); }
+
+/* --- КНОПКИ --- */
+.actions { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; animation: fadeInUp 0.5s ease 0.6s forwards; opacity: 0; }
+.btn { 
+  padding: 14px 24px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; 
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); font-family: inherit; 
+  display: inline-flex; align-items: center; gap: 8px; 
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+.btn-run { background: var(--accent); color: white; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3); }
+.btn-run:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-3px); box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5); }
+.btn-check { background: var(--success); color: white; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
+.btn-check:hover:not(:disabled) { background: #34d399; transform: translateY(-3px); box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5); }
+.btn-howto { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+.btn-howto:hover { background: rgba(59, 130, 246, 0.25); transform: translateY(-2px); }
+.btn-hint { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+.btn-hint:hover:not(:disabled) { background: var(--border); transform: translateY(-2px); }
+.btn-solution, .btn-reset { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.btn-solution:hover, .btn-reset:hover { color: var(--text); border-color: var(--muted); transform: translateY(-2px); background: rgba(255,255,255,0.05); }
+.btn-next { background: var(--success); color: white; margin-top: 16px; padding: 14px 28px; font-size: 16px; }
+
+/* --- БЛОКИ ПОДСКАЗОК --- */
+.hint { background: rgba(245, 158, 11, 0.1); border-left: 4px solid var(--warning); padding: 16px 24px; border-radius: 8px; margin-bottom: 24px; font-size: 15px; line-height: 1.6; color: #fcd34d; animation: fadeInUp 0.3s ease forwards; }
+.howto-box { background: rgba(59, 130, 246, 0.1); border-left: 4px solid var(--info); padding: 16px 24px; border-radius: 8px; margin-bottom: 24px; font-size: 15px; line-height: 1.6; animation: fadeInUp 0.3s ease forwards; }
+.howto-box ol { margin-left: 20px; margin-top: 8px; color: #bfdbfe; }
+.howto-box li { margin-bottom: 8px; }
+.solution-box { background: rgba(139, 92, 246, 0.1); border-left: 4px solid var(--accent); padding: 16px 24px; border-radius: 8px; margin-bottom: 24px; font-size: 15px; line-height: 1.6; color: #ddd6fe; animation: fadeInUp 0.3s ease forwards; }
+.hidden { display: none !important; }
+
+/* --- ВЫВОД --- */
+.output-wrap { background: var(--editor-bg); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 24px; box-shadow: inset 0 2px 15px rgba(0,0,0,0.5); animation: fadeInUp 0.5s ease 0.7s forwards; opacity: 0; }
+.output-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; background: #090c12; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 600; }
+.btn-clear { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; padding: 4px 8px; transition: color 0.2s; }
+.btn-clear:hover { color: var(--text); }
+.output { padding: 24px; font-size: 15px; line-height: 1.6; color: var(--muted); white-space: pre-wrap; word-break: break-word; min-height: 80px; max-height: 350px; overflow-y: auto; font-family: "JetBrains Mono", monospace; }
+.output.has-content { color: #e2e8f0; }
+.output.has-error { color: #fca5a5; }
+
+/* --- ФИДБЕК --- */
+.feedback { padding: 24px; border-radius: 16px; font-size: 16px; line-height: 1.6; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); animation: pop 0.4s ease; }
+.feedback.success { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #6ee7b7; }
+.feedback.error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; }
+.feedback .explain { color: #e2e8f0; background: rgba(0,0,0,0.2); border-left: 4px solid var(--accent); padding: 16px; border-radius: 8px; margin-top: 16px; }
+.feedback .explain b { color: var(--accent-hover); }
+
+/* --- КОНФЕТТИ И ТОСТЫ --- */
+.confetti { position: fixed; pointer-events: none; z-index: 999; font-size: 24px; animation: confettiFall 1.5s ease-in forwards; }
+.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--panel); border: 1px solid var(--border); color: var(--text); padding: 16px 28px; border-radius: 12px; font-size: 15px; font-weight: 600; z-index: 10000; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* --- МОДАЛЬНОЕ ОКНО --- */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 20000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.modal-overlay.show { opacity: 1; pointer-events: all; }
+.modal { border-radius: 24px; width: 90%; max-width: 650px; max-height: 85vh; overflow-y: auto; padding: 40px; transform: scale(0.9); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.modal-overlay.show .modal { transform: scale(1); }
+.modal h2 { margin-bottom: 32px; font-size: 28px; text-align: center; font-weight: 800; }
+.achievements-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; }
+.badge-item { background: var(--panel-2); border: 1px solid var(--border); border-radius: 16px; padding: 24px; text-align: center; transition: all 0.3s; filter: grayscale(1); opacity: 0.4; }
+.badge-item.unlocked { filter: grayscale(0); opacity: 1; border-color: var(--accent); background: linear-gradient(145deg, rgba(139,92,246,0.15), transparent); transform: translateY(-6px); box-shadow: 0 12px 25px rgba(139,92,246,0.2); }
+.badge-icon { font-size: 48px; margin-bottom: 16px; display: block; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+.badge-name { font-size: 15px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+.badge-desc { font-size: 13px; color: var(--muted); line-height: 1.4; }
+
+/* --- АДАПТИВ --- */
+@media (max-width: 900px) {
+  main { grid-template-columns: 1fr; }
+  #sidebar { border-right: none; border-bottom: 1px solid var(--border); max-height: 250px; }
+  #content { padding: 24px; }
+  header { gap: 12px; padding: 12px 16px; }
+  .progress-wrap { max-width: none; order: 10; width: 100%; margin-left: 0; margin-top: 8px; }
+  .stats { font-size: 11px; gap: 12px; padding: 8px 16px; }
+  .editor-header .kbd-hint { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <p>Загружаем окружение Python...</p>
+  <p class="hint">Первый запуск может занять несколько секунд</p>
+</div>
+
+<header>
+  <div class="logo">🐍 Py<span>Path</span></div>
+  <div class="tabs">
+    <button id="tabLessons" class="tab active">Обучение</button>
+    <button id="tabSandbox" class="tab">Песочница</button>
+  </div>
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span id="progressText">0 / 0</span>
+  </div>
+  <button id="achieveBtn" class="icon-btn" title="Достижения">🏆</button>
+  <button id="themeBtn" class="icon-btn" title="Сменить тему">🌙</button>
+</header>
+
+<div class="stats" id="statsBar">
+  <span>📚 Уроков: <b id="statTotal">0</b></span>
+  <span>✅ Пройдено: <b id="statDone">0</b></span>
+  <span>▶ Запусков: <b id="statRuns">0</b></span>
+  <span>✔ Проверок: <b id="statChecks">0</b></span>
+  <span>❌ Ошибок: <b id="statErrors">0</b></span>
+</div>
+
+<main>
+  <aside id="sidebar">
+    <div class="search-wrap">
+      <input type="text" id="searchInput" placeholder="🔍 Поиск по урокам...">
+    </div>
+    <ul id="lessonList"></ul>
+  </aside>
+
+  <section id="content">
+    <div id="lessonView">
+      
+      <div class="bubble-wrap">
+        <div class="speech-bubble glass-panel" id="speechBubble">
+          Привет! Я твой помощник. Готов погрузиться в мир кода?
+        </div>
+      </div>
+
+      <h1 id="lessonTitle"></h1>
+      <div id="moduleBadge" class="module-badge"></div>
+      
+      <div id="theoryBox" class="theory"></div>
+
+      <div class="exercise">
+        <h3>📝 Твоя задача</h3>
+        <div id="exerciseDesc"></div>
+      </div>
+
+      <div class="editor-wrap">
+        <div class="editor-header">
+          <span>main.py</span>
+          <span class="kbd-hint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> для запуска</span>
+        </div>
+        <textarea id="codeEditorLesson" spellcheck="false"></textarea>
+      </div>
+
+      <details class="input-wrap">
+        <summary>📥 Ввод данных (если используется input())</summary>
+        <textarea id="programInputLesson" placeholder="Каждое значение на новой строке"></textarea>
+      </details>
+
+      <div class="actions">
+        <button id="runBtnLesson" class="btn btn-run" disabled>▶ Запустить код</button>
+        <button id="checkBtnLesson" class="btn btn-check" disabled>✓ Проверить решение</button>
+        <button id="stopBtnLesson" class="btn btn-stop hidden" style="background:var(--error); color:white;">⏹ Стоп</button>
+        <button id="howToSolveBtn" class="btn btn-howto">🧠 Как решать?</button>
+        <button id="hintBtn" class="btn btn-hint">💡 Подсказка</button>
+        <button id="solutionBtn" class="btn btn-solution">👁 Решение</button>
+        <button id="resetBtn" class="btn btn-reset">↺ Сброс</button>
+      </div>
+
+      <div id="howToSolveBox" class="howto-box hidden"></div>
+      <div id="hintBox" class="hint hidden"></div>
+      <div id="solutionBox" class="solution-box hidden"></div>
+
+      <div class="output-wrap">
+        <div class="output-header">
+          <span>Результат работы</span>
+          <button id="clearOutputLesson" class="btn-clear">Очистить</button>
+        </div>
+        <pre id="outputLesson" class="output">Здесь появится результат...</pre>
+      </div>
+
+      <div id="feedback" class="feedback hidden"></div>
+    </div>
+
+    <div id="sandboxView" class="hidden">
+      <h1 style="margin-bottom: 16px; font-size: 28px;">🧪 Свободная песочница</h1>
+      <p style="color: var(--muted); margin-bottom: 24px; font-size: 15px;">Экспериментируй с любым кодом на Python. Здесь нет правил и проверок.</p>
+      
+      <div class="editor-wrap">
+        <div class="editor-header">
+          <span>sandbox.py</span>
+        </div>
+        <textarea id="codeEditorSandbox" spellcheck="false"></textarea>
+      </div>
+
+      <div class="actions">
+        <button id="runBtnSandbox" class="btn btn-run" disabled>▶ Запустить код</button>
+      </div>
+
+      <div class="output-wrap">
+        <div class="output-header">
+          <span>Результат работы</span>
+          <button id="clearOutputSandbox" class="btn-clear">Очистить</button>
+        </div>
+        <pre id="outputSandbox" class="output">Здесь появится результат...</pre>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<div id="achievementsModal" class="modal-overlay">
+  <div class="modal glass-panel">
+    <h2>🏆 Мои достижения</h2>
+    <div id="achievementsGrid" class="achievements-grid"></div>
+    <div style="text-align:center; margin-top: 32px;">
+      <button class="btn btn-run" onclick="document.getElementById('achievementsModal').classList.remove('show')">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- Загрузка Python -->
+<script src="https://unpkg.com/pyodide@0.26.2/pyodide.js"></script>
+<script>
+const memoryStorage = {};
+const safeStorage = {
+  getItem(key) { try { return localStorage.getItem(key); } catch (e) { return memoryStorage[key] || null; } },
+  setItem(key, value) { try { localStorage.setItem(key, value); } catch (e) { memoryStorage[key] = value; } }
+};
+
+const BADGES = [
+  { id: "first", icon: "🥾", name: "Первый шаг", desc: "Пройти 1-й урок" },
+  { id: "five", icon: "🌱", name: "Новичок", desc: "Пройти 5 уроков" },
+  { id: "ten", icon: "🔥", name: "На полпути", desc: "Пройти 10 уроков" },
+  { id: "twenty", icon: "⚡", name: "Продвинутый", desc: "Пройти 20 уроков" },
+  { id: "all", icon: "👑", name: "Мастер Python", desc: "Пройти весь курс" },
+  { id: "runner", icon: "🏃", name: "Бегун", desc: "Запустить код 20 раз" },
+  { id: "solo", icon: "🧠", name: "Умник", desc: "Решить без подсказок" }
+];
+
+const lessons = [
+  {
+    module: "Модуль 1 · Первые шаги",
+    id: 1, title: "1. Знакомство — print()",
+    theory: `<p><b>print()</b> — это как громкоговоритель. Всё, что ты положишь в скобки, программа выведет на экран.</p>
+      <p>Текст (строку) нужно обязательно брать в кавычки — одинарные или двойные.</p>
+      <pre>print("Привет, мир!")\nprint('Python — это круто')</pre>
+      <h3>Зачем это нужно?</h3>
+      <p>Программа работает "внутри себя". Чтобы мы могли увидеть результат её работы, мы используем <code>print()</code>.</p>`,
+    exercise: `Выведи на экран фразу <b>Я изучаю Python</b>.
+      <div class="io">Ожидаемый вывод:<br>Я изучаю Python</div>`,
+    starter: `# Напиши свой код здесь\n`,
+    expectedOutput: "Я изучаю Python",
+    testInput: "",
+    howToSolve: [
+      "Используй функцию <code>print()</code>.",
+      "Внутри круглых скобок напиши нужную фразу <code>Я изучаю Python</code>.",
+      "Обязательно закрой фразу в кавычки (двойные или одинарные)."
+    ],
+    hint: `Напиши: <code>print("Я изучаю Python")</code>`,
+    solution: `print("Я изучаю Python")`,
+    explanation: `<b>Разбор:</b> Ты передал строку в функцию <code>print()</code>, и она вывела её в консоль.`
+  },
+  {
+    module: "Модуль 1 · Первые шаги",
+    id: 2, title: "2. Переменные",
+    theory: `<p><b>Переменная</b> — это коробка с наклейкой. Ты придумываешь имя (наклейку), кладёшь туда значение, а потом можешь достать его по имени.</p>
+      <pre>name = "Иван"\nprint(name) # выведет Иван</pre>
+      <p>Важно: в <code>print()</code> мы пишем имя переменной <b>без кавычек</b>. Иначе он выведет само слово "name".</p>`,
+    exercise: `Создай переменную <b>city</b> со значением <b>Москва</b> и выведи её через <code>print()</code>.
+      <div class="io">Ожидаемый вывод:<br>Москва</div>`,
+    starter: `# Создай переменную city и выведи её\n`,
+    expectedOutput: "Москва",
+    testInput: "",
+    howToSolve: [
+      "Придумай имя: <code>city</code>.",
+      "Поставь знак <code>=</code> (это значит 'положи в коробку').",
+      'Напиши значение <code>"Москва"</code> (текст в кавычках).',
+      "Выведи переменную через <code>print(city)</code> (без кавычек!)."
+    ],
+    hint: `Сначала присвой значение: <code>city = "Москва"</code>, затем выведи: <code>print(city)</code>`,
+    solution: `city = "Москва"\nprint(city)`,
+    explanation: `<b>Разбор:</b> Сначала мы создали переменную и сохранили в неё текст, а затем вывели содержимое.`
+  },
+  {
+    module: "Модуль 1 · Первые шаги",
+    id: 3, title: "3. Числа и арифметика",
+    theory: `<p>С числами Python работает как калькулятор. Числа пишутся <b>без кавычек</b>.</p>
+      <pre>a = 10\nb = 3\nprint(a + b) # 13</pre>
+      <p>Если написать <code>"10" + "3"</code>, Python склеит их как текст: <code>"103"</code>. Будь внимателен!</p>`,
+    exercise: `Выведи результат выражения <b>15 + 27</b>.
+      <div class="io">Ожидаемый вывод:<br>42</div>`,
+    starter: `# Выведи результат 15 + 27\n`,
+    expectedOutput: "42",
+    testInput: "",
+    howToSolve: [
+      "Вызови функцию <code>print()</code>.",
+      "Внутри скобок напиши математическое выражение: <code>15 + 27</code>.",
+      "Python сам посчитает результат перед выводом."
+    ],
+    hint: `Напиши <code>print(15 + 27)</code>`,
+    solution: `print(15 + 27)`,
+    explanation: `<b>Разбор:</b> Python вычисляет выражение внутри <code>print()</code> и выводит уже готовый ответ.`
+  },
+  {
+    module: "Модуль 1 · Первые шаги",
+    id: 4, title: "4. Ввод данных — input()",
+    theory: `<p><b>input()</b> — это диалог с пользователем. Программа спрашивает данные, а пользователь вводит их с клавиатуры.</p>
+      <pre>name = input()\nprint("Привет, " + name)</pre>
+      <p>Символ <code>+</code> склеивает строки. Внимательно следи за пробелами.</p>`,
+    exercise: `Считай имя через <code>input()</code> и выведи <b>Привет, NAME!</b>
+      <div class="io">Ввод: Алиса<br>Ожидаемый вывод: Привет, Алиса!</div>`,
+    starter: `name = input()\n# Выведи приветствие\n`,
+    expectedOutput: "Привет, Алиса!",
+    testInput: "Алиса",
+    altInputs: [{input: "Борис", output: "Привет, Борис!"}],
+    howToSolve: [
+      "У нас уже есть <code>name = input()</code>, значит имя сохранено.",
+      "Нужно вывести текст 'Привет, ', потом имя, потом '!'.",
+      "Склей их вместе: <code>print('Привет, ' + name + '!')</code>."
+    ],
+    hint: `Склей строки: <code>print("Привет, " + name + "!")</code>`,
+    solution: `name = input()\nprint("Привет, " + name + "!")`,
+    explanation: `<b>Разбор:</b> Оператор <code>+</code> собрал три кусочка текста в одну красивую фразу.`
+  },
+  {
+    module: "Модуль 2 · Ветвления",
+    id: 5, title: "5. Условие if / else",
+    theory: `<p><b>if</b> (если) позволяет программе принимать решения. Если условие верное — выполняется один код, если нет — другой (в блоке <b>else</b>).</p>
+      <p>Важно: после условия ставится двоеточие <code>:</code>, а код внутри пишется с отступом.</p>
+      <pre>if age >= 18:\n    print("Взрослый")\nelse:\n    print("Ребёнок")</pre>`,
+    exercise: `Считай число. Если оно <b>больше нуля</b> — выведи <b>Положительное</b>, иначе — <b>Не положительное</b>.
+      <div class="io">Ввод: 5<br>Ожидаемый вывод: Положительное</div>`,
+    starter: `n = int(input())\n# Напиши условие if / else\n`,
+    expectedOutput: "Положительное",
+    testInput: "5",
+    altInputs: [{input: "-3", output: "Не положительное"}, {input: "0", output: "Не положительное"}],
+    howToSolve: [
+      "У нас есть число <code>n</code>.",
+      "Напиши <code>if n > 0:</code> — проверяем, больше ли оно нуля.",
+      "С отступом выведи 'Положительное'.",
+      "Напиши <code>else:</code> и с отступом выведи 'Не положительное'."
+    ],
+    hint: `Используй <code>if n > 0:</code>`,
+    solution: `n = int(input())\nif n > 0:\n    print("Положительное")\nelse:\n    print("Не положительное")`,
+    explanation: `<b>Разбор:</b> <code>int(input())</code> сразу превращает ввод в число. Дальше работает логика: больше нуля или нет.`
+  },
+  {
+    module: "Модуль 2 · Ветвления",
+    id: 6, title: "6. Цепочка elif",
+    theory: `<p><b>elif</b> (иначе если) нужен, когда вариантов больше двух. Python проверяет их по очереди сверху вниз и останавливается на первом подходящем.</p>
+      <pre>if score >= 90:\n    print("Отлично")\nelif score >= 70:\n    print("Хорошо")\nelse:\n    print("Плохо")</pre>`,
+    exercise: `Считай число. Если <b>больше 10</b> — <b>Большое</b>; если <b>равно 10</b> — <b>Ровно десять</b>; иначе — <b>Маленькое</b>.
+      <div class="io">Ввод: 10<br>Ожидаемый вывод: Ровно десять</div>`,
+    starter: `n = int(input())\n# Напиши цепочку if / elif / else\n`,
+    expectedOutput: "Ровно десять",
+    testInput: "10",
+    altInputs: [{input: "15", output: "Большое"}, {input: "3", output: "Маленькое"}],
+    howToSolve: [
+      "Сначала проверь самое строгое условие: <code>if n > 10:</code>.",
+      "Затем добавь <code>elif n == 10:</code> (помни, что сравнение — это два знака равно).",
+      "И в конце <code>else:</code> для всех остальных случаев."
+    ],
+    hint: `Для равенства используй <code>==</code>`,
+    solution: `n = int(input())\nif n > 10:\n    print("Большое")\nelif n == 10:\n    print("Ровно десять")\nelse:\n    print("Маленькое")`,
+    explanation: `<b>Разбор:</b> Если число 10, то первое условие (оно больше 10?) ложное, и программа идёт в elif.`
+  },
+  {
+    module: "Модуль 2 · Ветвления",
+    id: 7, title: "7. Логика and / or / not",
+    theory: `<p>Оператор <code>and</code> требует, чтобы выполнялись <b>оба</b> условия. <code>or</code> — чтобы выполнялось <b>хотя бы одно</b>.</p>
+      <pre>if age >= 18 and age < 65:\n    print("Взрослый")</pre>`,
+    exercise: `Считай число. Выведи <b>В диапазоне</b>, если оно от 1 до 10, иначе — <b>Вне диапазона</b>.
+      <div class="io">Ввод: 7<br>Ожидаемый вывод: В диапазоне</div>`,
+    starter: `n = int(input())\n# Проверь, что 1 <= n <= 10\n`,
+    expectedOutput: "В диапазоне",
+    testInput: "7",
+    altInputs: [{input: "15", output: "Вне диапазона"}, {input: "1", output: "В диапазоне"}],
+    howToSolve: [
+      "Нужно проверить, что число не меньше 1 И не больше 10.",
+      "Пишем: <code>if n >= 1 and n <= 10:</code>.",
+      "В Python можно сделать это короче: <code>if 1 <= n <= 10:</code>."
+    ],
+    hint: `Условие: <code>if n >= 1 and n <= 10:</code>`,
+    solution: `n = int(input())\nif n >= 1 and n <= 10:\n    print("В диапазоне")\nelse:\n    print("Вне диапазона")`,
+    explanation: `<b>Разбор:</b> <code>and</code> гарантирует, что оба условия выполнены одновременно.`
+  },
+  {
+    module: "Модуль 3 · Циклы",
+    id: 8, title: "8. Цикл while",
+    theory: `<p><b>while</b> повторяет код, пока условие истинно. Это как "пока не дойдёшь до финиша — беги".</p>
+      <pre>i = 1\nwhile i <= 5:\n    print(i)\n    i = i + 1</pre>
+      <p><b>Ловушка:</b> если не увеличивать <code>i</code>, цикл будет крутиться вечно.</p>`,
+    exercise: `Используя <code>while</code>, выведи числа от 1 до 10.
+      <div class="io">Ожидаемый вывод:<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10</div>`,
+    starter: `i = 1\n# Напиши цикл while\n`,
+    expectedOutput: "1\n2\n3\n4\n5\n6\n7\n8\n9\n10",
+    testInput: "",
+    howToSolve: [
+      "У тебя уже есть счетчик <code>i = 1</code>.",
+      "Запусти цикл: <code>while i <= 10:</code>.",
+      "Внутри цикла выведи <code>i</code> и не забудь увеличить его: <code>i = i + 1</code> (или <code>i += 1</code>)."
+    ],
+    hint: `Условие <code>while i <= 10:</code>. Не забудь <code>i = i + 1</code>.`,
+    solution: `i = 1\nwhile i <= 10:\n    print(i)\n    i = i + 1`,
+    explanation: `<b>Разбор:</b> Цикл печатает число и увеличивает его на 1, пока не дойдёт до 10.`
+  },
+  {
+    module: "Модуль 3 · Циклы",
+    id: 9, title: "9. Цикл for и range()",
+    theory: `<p><b>for</b> используется, когда мы точно знаем, сколько раз нужно повторить действие.</p>
+      <pre>for i in range(1, 6):\n    print(i)</pre>
+      <p><code>range(1, 6)</code> выдаёт числа от 1 до 5 (правая граница не включается).</p>`,
+    exercise: `Выведи квадраты чисел от 1 до 5.
+      <div class="io">Ожидаемый вывод:<br>1<br>4<br>9<br>16<br>25</div>`,
+    starter: `for i in range(1, 6):\n    # Выведи квадрат числа\n    pass\n`,
+    expectedOutput: "1\n4\n9\n16\n25",
+    testInput: "",
+    howToSolve: [
+      "Цикл уже написан: <code>for i in range(1, 6):</code>.",
+      "На каждом шаге переменная <code>i</code> принимает значение от 1 до 5.",
+      "Замени <code>pass</code> на <code>print(i * i)</code> (умножь число само на себя)."
+    ],
+    hint: `Вместо <code>pass</code> напиши <code>print(i * i)</code>`,
+    solution: `for i in range(1, 6):\n    print(i * i)`,
+    explanation: `<b>Разбор:</b> <code>range(1, 6)</code> даёт 1,2,3,4,5. <code>i * i</code> возводит каждое в квадрат.`
+  },
+  {
+    module: "Модуль 3 · Циклы",
+    id: 10, title: "10. break и continue",
+    theory: `<p><b>continue</b> говорит: "пропусти остаток этого шага и переходи к следующему". <b>break</b> полностью останавливает цикл.</p>`,
+    exercise: `Выведи числа от 1 до 10, пропустив все чётные.
+      <div class="io">Ожидаемый вывод:<br>1<br>3<br>5<br>7<br>9</div>`,
+    starter: `for i in range(1, 11):\n    # Пропусти чётные числа\n    pass\n`,
+    expectedOutput: "1\n3\n5\n7\n9",
+    testInput: "",
+    howToSolve: [
+      "Внутри цикла проверь, является ли число чётным: <code>if i % 2 == 0:</code> (остаток от деления на 2 равен нулю).",
+      "Если это так, напиши <code>continue</code>, чтобы пропустить шаг.",
+      "После проверки напиши <code>print(i)</code> (это выполнят только нечетные числа)."
+    ],
+    hint: `Если <code>i % 2 == 0</code>, то <code>continue</code>.`,
+    solution: `for i in range(1, 11):\n    if i % 2 == 0:\n        continue\n    print(i)`,
+    explanation: `<b>Разбор:</b> <code>i % 2 == 0</code> ловит чётные. <code>continue</code> перепрыгивает через <code>print</code>.`
+  },
+  {
+    module: "Модуль 4 · Коллекции",
+    id: 11, title: "11. Списки",
+    theory: `<p><b>Список</b> — это упорядоченный набор элементов в квадратных скобках <code>[]</code>.</p>
+      <pre>fruits = ["яблоко", "банан"]\nfor f in fruits:\n    print(f)</pre>`,
+    exercise: `Создай список <b>[10, 20, 30, 40, 50]</b> и выведи элементы через <code>for</code>.
+      <div class="io">Ожидаемый вывод:<br>10<br>20<br>30<br>40<br>50</div>`,
+    starter: `# Создай список nums и выведи его элементы\n`,
+    expectedOutput: "10\n20\n30\n40\n50",
+    testInput: "",
+    howToSolve: [
+      "Создай переменную и положи в неё список: <code>nums = [10, 20, 30, 40, 50]</code>.",
+      "Напиши цикл: <code>for n in nums:</code>.",
+      "Внутри цикла выведи <code>print(n)</code>."
+    ],
+    hint: `<code>nums = [10, 20, 30, 40, 50]</code>, затем цикл.`,
+    solution: `nums = [10, 20, 30, 40, 50]\nfor n in nums:\n    print(n)`,
+    explanation: `<b>Разбор:</b> <code>for n in nums</code> достаёт элементы по очереди.`
+  },
+  {
+    module: "Модуль 4 · Коллекции",
+    id: 12, title: "12. Методы списков",
+    theory: `<p>Списки можно менять. <code>append()</code> добавляет элемент в конец, <code>sort()</code> сортирует.</p>`,
+    exercise: `Создай список <b>[100, 50, 75]</b>, добавь <b>25</b>, отсортируй и выведи.
+      <div class="io">Ожидаемый вывод:<br>25<br>50<br>75<br>100</div>`,
+    starter: `nums = [100, 50, 75]\n# добавь 25, отсортируй и выведи\n`,
+    expectedOutput: "25\n50\n75\n100",
+    testInput: "",
+    howToSolve: [
+      "Добавь число в конец списка: <code>nums.append(25)</code>.",
+      "Отсортируй список по возрастанию: <code>nums.sort()</code>.",
+      "Выведи результат через цикл <code>for</code>."
+    ],
+    hint: `<code>nums.append(25)</code> и <code>nums.sort()</code>.`,
+    solution: `nums = [100, 50, 75]\nnums.append(25)\nnums.sort()\nfor n in nums:\n    print(n)`,
+    explanation: `<b>Разбор:</b> методы меняют сам список. <code>append</code> добавляет в конец, <code>sort</code> ставит по порядку.`
+  },
+  {
+    module: "Модуль 4 · Коллекции",
+    id: 13, title: "13. Строки и их методы",
+    theory: `<p>У строк есть полезные методы. <code>upper()</code> делает все буквы заглавными, <code>lower()</code> — строчными.</p>`,
+    exercise: `Считай текст и выведи его в верхнем регистре.
+      <div class="io">Ввод: hello world<br>Ожидаемый вывод: HELLO WORLD</div>`,
+    starter: `s = input()\n# Выведи s в верхнем регистре\n`,
+    expectedOutput: "HELLO WORLD",
+    testInput: "hello world",
+    altInputs: [{input: "python", output: "PYTHON"}],
+    howToSolve: [
+      "Ты получил текст в переменную <code>s</code>.",
+      "Примени к ней метод <code>.upper()</code>.",
+      "Выведи результат через <code>print(s.upper())</code>."
+    ],
+    hint: `Используй <code>s.upper()</code>`,
+    solution: `s = input()\nprint(s.upper())`,
+    explanation: `<b>Разбор:</b> метод возвращает новую строку, где все символы приведены к верхнему регистру.`
+  },
+  {
+    module: "Модуль 4 · Коллекции",
+    id: 14, title: "14. f-строки",
+    theory: `<p><b>f-строки</b> — это удобный способ склеивать текст и переменные. Поставь букву <code>f</code> перед кавычками и пиши переменные в фигурных скобках.</p>
+      <pre>name = "Аня"\nprint(f"Привет, {name}!")</pre>`,
+    exercise: `Считай два числа и выведи их сумму в формате <b>Сумма: X</b>.
+      <div class="io">Ввод: 3<br>4<br>Ожидаемый вывод: Сумма: 7</div>`,
+    starter: `a = int(input())\nb = int(input())\n# Выведи результат\n`,
+    expectedOutput: "Сумма: 7",
+    testInput: "3\n4",
+    altInputs: [{input: "10\n20", output: "Сумма: 30"}],
+    howToSolve: [
+      "У тебя есть два числа: <code>a</code> и <code>b</code>.",
+      "Напиши <code>print(f'...')</code>.",
+      "Внутри строки напиши 'Сумма: ' и вставь выражение <code>{a + b}</code>."
+    ],
+    hint: `<code>print(f"Сумма: {a + b}")</code>`,
+    solution: `a = int(input())\nb = int(input())\nprint(f"Сумма: {a + b}")`,
+    explanation: `<b>Разбор:</b> внутри фигурных скобок Python вычисляет математику и вставляет результат в текст.`
+  },
+  {
+    module: "Модуль 4 · Коллекции",
+    id: 15, title: "15. Словари (dict)",
+    theory: `<p><b>Словарь</b> хранит данные в формате "ключ: значение". Это как телефонный справочник — имя (ключ) и номер (значение).</p>`,
+    exercise: `Создай словарь с ключами <b>"a"</b> и <b>"b"</b> и значениями <b>10</b> и <b>20</b>. Выведи сумму.
+      <div class="io">Ожидаемый вывод:<br>30</div>`,
+    starter: `# Создай словарь и выведи сумму его значений\n`,
+    expectedOutput: "30",
+    testInput: "",
+    howToSolve: [
+      "Создай словарь: <code>d = {'a': 10, 'b': 20}</code>.",
+      "Достань первое значение: <code>d['a']</code>.",
+      "Достань второе: <code>d['b']</code>.",
+      "Сложи их и выведи: <code>print(d['a'] + d['b'])</code>."
+    ],
+    hint: `<code>d = {"a": 10, "b": 20}</code>`,
+    solution: `d = {"a": 10, "b": 20}\nprint(d["a"] + d["b"])`,
+    explanation: `<b>Разбор:</b> доступ по ключу через квадратные скобки.`
+  },
+  {
+    module: "Модуль 4 · Коллекции",
+    id: 16, title: "16. Кортежи и множества",
+    theory: `<p><b>Множество</b> (set) хранит только уникальные элементы. Если в списке были дубликаты, они исчезнут.</p>`,
+    exercise: `Создай список <b>[3, 1, 3, 2, 1]</b>, преврати его в множество и выведи количество уникальных элементов.
+      <div class="io">Ожидаемый вывод:<br>3</div>`,
+    starter: `nums = [3, 1, 3, 2, 1]\n# Преврати в множество и выведи len\n`,
+    expectedOutput: "3",
+    testInput: "",
+    howToSolve: [
+      "Преврати список в множество: <code>set(nums)</code>.",
+      "Узнай длину (количество элементов) с помощью <code>len()</code>.",
+      "Выведи результат: <code>print(len(set(nums)))</code>."
+    ],
+    hint: `<code>print(len(set(nums)))</code>`,
+    solution: `nums = [3, 1, 3, 2, 1]\nprint(len(set(nums)))`,
+    explanation: `<b>Разбор:</b> <code>set()</code> убирает дубликаты, <code>len()</code> считает их.`
+  },
+  {
+    module: "Модуль 5 · Функции",
+    id: 17, title: "17. Функции — def",
+    theory: `<p><b>Функция</b> — это мини-программа внутри твоей программы. Ты даёшь ей имя и можешь вызывать много раз.</p>
+      <pre>def hello(name):\n    print("Привет, " + name)</pre>`,
+    exercise: `Создай функцию <b>greet(name)</b>, которая печатает <b>Привет, NAME!</b> Вызови её с аргументом <b>Мир</b>.
+      <div class="io">Ожидаемый вывод:<br>Привет, Мир!</div>`,
+    starter: `def greet(name):\n    # допиши print\n    pass\n\n# вызови greet("Мир")\n`,
+    expectedOutput: "Привет, Мир!",
+    testInput: "",
+    howToSolve: [
+      "Внутри функции (с отступом) замени <code>pass</code> на <code>print('Привет, ' + name + '!')</code>.",
+      "После функции напиши <code>greet('Мир')</code>, чтобы она сработала."
+    ],
+    hint: `Внутри <code>print("Привет, " + name + "!")</code>.`,
+    solution: `def greet(name):\n    print("Привет, " + name + "!")\n\ngreet("Мир")`,
+    explanation: `<b>Разбор:</b> код выполнится при вызове.`
+  },
+  {
+    module: "Модуль 5 · Функции",
+    id: 18, title: "18. Возврат значений — return",
+    theory: `<p><b>return</b> возвращает результат из функции. Это как курьер: <code>print</code> показывает, а <code>return</code> отдаёт в руки.</p>`,
+    exercise: `Создай функцию <b>double(x)</b>, возвращающую <code>x * 2</code>. Выведи <code>double(21)</code>.
+      <div class="io">Ожидаемый вывод:<br>42</div>`,
+    starter: `def double(x):\n    # верни x * 2\n    pass\n\n# выведи double(21)\n`,
+    expectedOutput: "42",
+    testInput: "",
+    howToSolve: [
+      "Внутри функции напиши <code>return x * 2</code>.",
+      "Внизу вызови функцию и сразу выведи её результат: <code>print(double(21))</code>."
+    ],
+    hint: `<code>return x * 2</code>`,
+    solution: `def double(x):\n    return x * 2\n\nprint(double(21))`,
+    explanation: `<b>Разбор:</b> <code>print</code> показывает, <code>return</code> отдаёт.`
+  },
+  {
+    module: "Модуль 5 · Функции",
+    id: 19, title: "19. Ошибки — try / except",
+    theory: `<p><b>try/except</b> — это страховка. Если в блоке <code>try</code> произойдет ошибка, программа не упадет, а выполнит код в <code>except</code>.</p>`,
+    exercise: `Попробуй преобразовать строку <b>"hello"</b> в число. Если возникнет ошибка — выведи <b>Ошибка</b>.
+      <div class="io">Ожидаемый вывод:<br>Ошибка</div>`,
+    starter: `# Напиши конструкцию try / except\n`,
+    expectedOutput: "Ошибка",
+    testInput: "",
+    howToSolve: [
+      "Напиши <code>try:</code> и с отступом <code>int('hello')</code>.",
+      "Напиши <code>except ValueError:</code> и с отступом <code>print('Ошибка')</code>."
+    ],
+    hint: `Используй <code>try:</code> и <code>except ValueError:</code>`,
+    solution: `try:\n    int("hello")\nexcept ValueError:\n    print("Ошибка")`,
+    explanation: `<b>Разбор:</b> программа пытается сделать невозможное, ловит ошибку и выводит текст.`
+  },
+  {
+    module: "Модуль 5 · Функции",
+    id: 20, title: "20. List comprehension",
+    theory: `<p>Быстрый способ создать список одной строкой: <code>[выражение for x in список]</code>.</p>`,
+    exercise: `Создай список чисел от 1 до 5, умноженных на 10, и выведи его.
+      <div class="io">Ожидаемый вывод:<br>[10, 20, 30, 40, 50]</div>`,
+    starter: `# Создай список через list comprehension и выведи\n`,
+    expectedOutput: "[10, 20, 30, 40, 50]",
+    testInput: "",
+    howToSolve: [
+      "Напиши квадратные скобки: <code>[x * 10 for x in range(1, 6)]</code> и выведи."
+    ],
+    hint: `<code>[i * 10 for i in range(1, 6)]</code>`,
+    solution: `nums = [i * 10 for i in range(1, 6)]\nprint(nums)`,
+    explanation: `<b>Разбор:</b> выражение внутри скобок вычисляется для каждого элемента.`
+  },
+  {
+    module: "Модуль 6 · Продвинутый Python",
+    id: 21, title: "21. Модуль random",
+    theory: `<p>Модуль <b>random</b> генерирует случайные числа. Сначала его нужно подключить.</p>`,
+    exercise: `Импортируй <code>random</code>. Выведи случайное число от 1 до 10.
+      <div class="io">Ожидаемый вывод:<br>7 (или другое)</div>`,
+    starter: `import random\n# Выведи случайное число\n`,
+    expectedOutput: "1|2|3|4|5|6|7|8|9|10",
+    testInput: "",
+    howToSolve: [
+      "Модуль уже импортирован.",
+      "Используй функцию <code>random.randint(1, 10)</code>.",
+      "Выведи её через <code>print()</code>."
+    ],
+    hint: `<code>print(random.randint(1, 10))</code>`,
+    solution: `import random\nprint(random.randint(1, 10))`,
+    explanation: `<b>Разбор:</b> <code>randint(1, 10)</code> включает обе границы.`
+  },
+  {
+    module: "Модуль 6 · Продвинутый Python",
+    id: 22, title: "22. Классы и объекты",
+    theory: `<p><b>Класс</b> — это чертёж. По нему создаются объекты. <code>self</code> — ссылка на сам объект.</p>`,
+    exercise: `Создай класс <b>Cat</b> с конструктором, который сохраняет <code>name</code>. Создай объект <code>my_cat</code> с именем <b>Мурка</b> и выведи <code>my_cat.name</code>.
+      <div class="io">Ожидаемый вывод:<br>Мурка</div>`,
+    starter: `class Cat:\n    def __init__(self, name):\n        # сохрани name\n        pass\n\n# создай объект и выведи имя\n`,
+    expectedOutput: "Мурка",
+    testInput: "",
+    howToSolve: [
+      "Вместо <code>pass</code> напиши <code>self.name = name</code>.",
+      "Создай объект: <code>my_cat = Cat('Мурка')</code>.",
+      "Выведи имя: <code>print(my_cat.name)</code>."
+    ],
+    hint: `<code>self.name = name</code>`,
+    solution: `class Cat:\n    def __init__(self, name):\n        self.name = name\n\nmy_cat = Cat("Мурка")\nprint(my_cat.name)`,
+    explanation: `<b>Разбор:</b> <code>self</code> — это ссылка на сам объект.`
+  },
+  {
+    module: "Модуль 6 · Продвинутый Python",
+    id: 23, title: "23. Рекурсия",
+    theory: `<p>Функция вызывает саму себя, пока не дойдёт до базы (условия выхода).</p>`,
+    exercise: `Создай функцию <b>fact(n)</b> для факториала. Выведи <code>fact(5)</code>.
+      <div class="io">Ожидаемый вывод:<br>120</div>`,
+    starter: `def fact(n):\n    # Напиши базу и шаг рекурсии\n    pass\n\nprint(fact(5))\n`,
+    expectedOutput: "120",
+    testInput: "",
+    howToSolve: [
+      "Добавь условие выхода: <code>if n == 1: return 1</code>.",
+      "Добавь шаг: <code>return n * fact(n - 1)</code>."
+    ],
+    hint: `База: <code>if n == 1: return 1</code>. Шаг: <code>return n * fact(n - 1)</code>`,
+    solution: `def fact(n):\n    if n == 1:\n        return 1\n    return n * fact(n - 1)\n\nprint(fact(5))`,
+    explanation: `<b>Разбор:</b> функция вызывает себя, пока не дойдёт до 1.`
+  },
+  {
+    module: "Модуль 6 · Продвинутый Python",
+    id: 24, title: "24. Генераторы (yield)",
+    theory: `<p><b>yield</b> отдаёт значение и как бы "засыпает", чтобы потом продолжить с этого места.</p>`,
+    exercise: `Создай генератор <b>evens(n)</b> для чётных чисел до n. Выведи для <code>n = 6</code>.
+      <div class="io">Ожидаемый вывод:<br>0<br>2<br>4</div>`,
+    starter: `def evens(n):\n    # используй yield\n    pass\n\nfor x in evens(6):\n    print(x)\n`,
+    expectedOutput: "0\n2\n4",
+    testInput: "",
+    howToSolve: [
+      "Напиши цикл <code>for i in range(n):</code>.",
+      "Внутри проверь: <code>if i % 2 == 0:</code>.",
+      "Если да, напиши <code>yield i</code> (вместо return)."
+    ],
+    hint: `Внутри: <code>for i in range(n): if i % 2 == 0: yield i</code>`,
+    solution: `def evens(n):\n    for i in range(n):\n        if i % 2 == 0:\n            yield i\n\nfor x in evens(6):\n    print(x)`,
+    explanation: `<b>Разбор:</b> генератор отдаёт числа по одному, экономя память.`
+  },
+  {
+    module: "Модуль 6 · Продвинутый Python",
+    id: 25, title: "25. Фильтрация списков",
+    theory: `<p>В list comprehension можно добавить условие <b>if</b>.</p>`,
+    exercise: `Оставь только числа больше 5 из <b>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]</b>.
+      <div class="io">Ожидаемый вывод:<br>[6, 7, 8, 9, 10]</div>`,
+    starter: `nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]\n# Отфильтруй и выведи\n`,
+    expectedOutput: "[6, 7, 8, 9, 10]",
+    testInput: "",
+    howToSolve: [
+      "Используй квадратные скобки: <code>[x for x in nums if x > 5]</code>.",
+      "Выведи полученный список."
+    ],
+    hint: `<code>print([x for x in nums if x > 5])</code>`,
+    solution: `nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]\nprint([x for x in nums if x > 5])`,
+    explanation: `<b>Разбор:</b> условие проверяет каждый элемент и отбрасывает ненужные.`
+  }
+];
+
+let pyodide = null;
+let pyReady = false;
+let currentLesson = 0;
+let completed = new Set();
+let currentTab = 'lessons';
+let lessonCodes = {};
+let stats = { runs: 0, checks: 0, errors: 0 };
+let achievements = new Set();
+let usedHint = false;
+let executing = false;
+let searchQuery = '';
+
+function loadState() {
+  try { completed = new Set(JSON.parse(safeStorage.getItem('pypath_progress_local') || '[]')); } catch (e) { completed = new Set(); }
+  try { lessonCodes = JSON.parse(safeStorage.getItem('pypath_codes_local') || '{}'); } catch (e) { lessonCodes = {}; }
+  try { stats = JSON.parse(safeStorage.getItem('pypath_stats_local') || '{"runs":0,"checks":0,"errors":0}'); } catch (e) { stats = {runs:0,checks:0,errors:0}; }
+  try { achievements = new Set(JSON.parse(safeStorage.getItem('pypath_achieve_local') || '[]')); } catch (e) { achievements = new Set(); }
+  try {
+    const theme = safeStorage.getItem('pypath_theme_local');
+    if (theme === 'light') { document.body.classList.add('light'); document.getElementById('themeBtn').textContent = '☀️'; }
+  } catch (e) {}
+}
+function saveProgress() { safeStorage.setItem('pypath_progress_local', JSON.stringify([...completed])); }
+function saveCodes() { safeStorage.setItem('pypath_codes_local', JSON.stringify(lessonCodes)); }
+function saveStats() { safeStorage.setItem('pypath_stats_local', JSON.stringify(stats)); }
+function saveAchievements() { safeStorage.setItem('pypath_achieve_local', JSON.stringify([...achievements])); }
+
+function updateStatsUI() {
+  document.getElementById('statTotal').textContent = lessons.length;
+  document.getElementById('statDone').textContent = completed.size;
+  document.getElementById('statRuns').textContent = stats.runs;
+  document.getElementById('statChecks').textContent = stats.checks;
+  document.getElementById('statErrors').textContent = stats.errors;
+  updateProgressUI();
+}
+
+function updateProgressUI() {
+  const total = lessons.length;
+  const done = completed.size;
+  document.getElementById('progressFill').style.width = (done / total * 100) + '%';
+  document.getElementById('progressText').textContent = `${done} / ${total}`;
+}
+
+function renderSidebar() {
+  const ul = document.getElementById('lessonList');
+  ul.innerHTML = '';
+  let lastModule = null;
+  const q = searchQuery.toLowerCase().trim();
+  lessons.forEach((lesson, i) => {
+    if (q && !lesson.title.toLowerCase().includes(q) && !lesson.module.toLowerCase().includes(q)) return;
+    if (lesson.module !== lastModule) {
+      const h = document.createElement('div');
+      h.className = 'module-title';
+      const modLessons = lessons.filter(l => l.module === lesson.module);
+      const modDone = modLessons.filter(l => completed.has(l.id)).length;
+      h.innerHTML = `<span>${lesson.module}</span><span class="mod-count">${modDone}/${modLessons.length}</span>`;
+      ul.appendChild(h);
+      lastModule = lesson.module;
+    }
+    const li = document.createElement('li');
+    const done = completed.has(lesson.id);
+    li.innerHTML = `<span class="check">${done ? '✓' : ''}</span>${lesson.title}`;
+    if (i === currentLesson) li.classList.add('active');
+    if (done) li.classList.add('done');
+    li.addEventListener('click', () => selectLesson(i));
+    ul.appendChild(li);
+  });
+}
+
+function selectLesson(idx) {
+  if (idx < 0 || idx >= lessons.length) return;
+  const prev = lessons[currentLesson];
+  if (prev) lessonCodes[prev.id] = document.getElementById('codeEditorLesson').value;
+  saveCodes();
+
+  currentLesson = idx;
+  usedHint = false;
+  const lesson = lessons[idx];
+  document.getElementById('lessonTitle').textContent = lesson.title;
+  document.getElementById('moduleBadge').textContent = lesson.module;
+  document.getElementById('theoryBox').innerHTML = lesson.theory;
+  document.getElementById('exerciseDesc').innerHTML = lesson.exercise;
+  
+  const savedCode = lessonCodes[lesson.id];
+  document.getElementById('codeEditorLesson').value = (savedCode !== undefined ? savedCode : lesson.starter);
+  
+  document.getElementById('hintBox').classList.add('hidden');
+  document.getElementById('howToSolveBox').classList.add('hidden');
+  document.getElementById('solutionBox').classList.add('hidden');
+  document.getElementById('feedback').classList.add('hidden');
+  const outEl = document.getElementById('outputLesson');
+  outEl.textContent = '— здесь появится результат запуска —';
+  outEl.className = 'output';
+  document.getElementById('programInputLesson').value = lesson.testInput || '';
+  
+  const contentBlocks = ['lessonTitle', 'moduleBadge', 'theoryBox', '.exercise', '.editor-wrap', '.input-wrap', '.actions', '.output-wrap'];
+  contentBlocks.forEach(sel => {
+    const el = document.querySelector(sel) || document.getElementById(sel);
+    if(el) {
+      el.style.animation = 'none';
+      el.offsetHeight; 
+      el.style.animation = null; 
+    }
+  });
+
+  setMascotMessage(`Приступим к уроку "${lesson.title}"!`, 'normal');
+  renderSidebar();
+}
+
+function setMascotMessage(text, state = 'normal') {
+  const bubble = document.getElementById('speechBubble');
+  
+  bubble.innerHTML = text;
+  
+  if (state === 'success') {
+    bubble.style.borderColor = 'var(--success)';
+    setTimeout(() => bubble.style.borderColor = 'rgba(255, 255, 255, 0.08)', 600);
+  } else if (state === 'error') {
+    bubble.style.borderColor = 'var(--error)';
+    setTimeout(() => bubble.style.borderColor = 'rgba(255, 255, 255, 0.08)', 600);
+  }
+}
+
+async function runPython(code, programInput, timeoutMs = 8000) {
+  const inputs = (programInput || '').split('\n');
+  pyodide.globals.set('__user_code__', code);
+  pyodide.globals.set('__prog_input__', pyodide.toPy(inputs));
+  const execPromise = pyodide.runPythonAsync(`
+import sys, json
+from io import StringIO
+_code = __user_code__
+_inputs = list(__prog_input__)
+_idx = [0]
+def _fake_input(prompt=''):
+    if _idx[0] < len(_inputs):
+        v = _inputs[_idx[0]]
+        _idx[0] += 1
+        return v
+    return ''
+_old_out = sys.stdout
+sys.stdout = StringIO()
+_output = ''
+_error = None
+try:
+    exec(_code, {'__name__': '__main__', 'input': _fake_input})
+    _output = sys.stdout.getvalue()
+except SystemExit:
+    _output = sys.stdout.getvalue()
+except Exception as _e:
+    _output = sys.stdout.getvalue()
+    _error = f"{type(_e).__name__}: {_e}"
+finally:
+    sys.stdout = _old_out
+json.dumps({'output': _output, 'error': _error})
+  `);
+  const result = await Promise.race([
+    execPromise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), timeoutMs))
+  ]);
+  return JSON.parse(result);
+}
+
+function normalize(str) {
+  return (str || '').replace(/\r\n/g, '\n').split('\n').map(l => l.replace(/\s+$/, '')).join('\n').replace(/\n+$/, '');
+}
+
+function showConfetti() {
+  const emojis = ['🎉', '✨', '🎊', '⭐', '💜', '🐍'];
+  for (let i = 0; i < 20; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti';
+    el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.animationDelay = Math.random() * 0.3 + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2000);
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function checkAchievements() {
+  let newAch = false;
+  if (completed.size >= 1 && !achievements.has('first')) { achievements.add('first'); newAch = true; }
+  if (completed.size >= 5 && !achievements.has('five')) { achievements.add('five'); newAch = true; }
+  if (completed.size >= 10 && !achievements.has('ten')) { achievements.add('ten'); newAch = true; }
+  if (completed.size >= 20 && !achievements.has('twenty')) { achievements.add('twenty'); newAch = true; }
+  if (completed.size >= 25 && !achievements.has('all')) { achievements.add('all'); newAch = true; }
+  if (stats.runs >= 20 && !achievements.has('runner')) { achievements.add('runner'); newAch = true; }
+  if (stats.errors >= 5 && !achievements.has('fixer')) { achievements.add('fixer'); newAch = true; }
+  
+  if (newAch) {
+    saveAchievements();
+    showToast('🏆 Получено новое достижение!');
+    showConfetti();
+  }
+}
+
+function renderAchievements() {
+  const grid = document.getElementById('achievementsGrid');
+  grid.innerHTML = '';
+  BADGES.forEach(b => {
+    const isUnlocked = achievements.has(b.id);
+    const div = document.createElement('div');
+    div.className = 'badge-item' + (isUnlocked ? ' unlocked' : '');
+    div.innerHTML = `<span class="badge-icon">${b.icon}</span><div class="badge-name">${b.name}</div><div class="badge-desc">${b.desc}</div>`;
+    grid.appendChild(div);
+  });
+}
+
+async function handleRunLesson() {
+  if (!pyReady || executing) return;
+  executing = true;
+  const code = document.getElementById('codeEditorLesson').value;
+  lessonCodes[lessons[currentLesson].id] = code;
+  saveCodes();
+  stats.runs++;
+  saveStats();
+  updateStatsUI();
+  checkAchievements();
+  
+  document.getElementById('stopBtnLesson').classList.remove('hidden');
+  const input = document.getElementById('programInputLesson').value;
+  const outEl = document.getElementById('outputLesson');
+  outEl.textContent = '⏳ Запуск...';
+  outEl.className = 'output';
+  try {
+    const { output, error } = await runPython(code, input);
+    let text = output || '';
+    if (error) {
+      if (text && !text.endsWith('\n')) text += '\n';
+      text += '❌ ' + error;
+      outEl.className = 'output has-content has-error';
+      stats.errors++; saveStats(); updateStatsUI(); checkAchievements();
+      setMascotMessage("Ой! В коде ошибка. Посмотри в вывод.", 'error');
+    } else {
+      if (!text) text = '(программа выполнилась без вывода)';
+      outEl.className = 'output has-content';
+      setMascotMessage("Код выполнился! Теперь нажми «Проверить», чтобы сдать задание.", 'normal');
+    }
+    outEl.textContent = text;
+  } catch (e) {
+    if (e.message === 'timeout') {
+      outEl.textContent = '⏹ Превышено время выполнения (8 сек). Возможно, бесконечный цикл?';
+      outEl.className = 'output has-error';
+    } else {
+      outEl.textContent = 'Ошибка: ' + e.message;
+      outEl.className = 'output has-error';
+    }
+    stats.errors++; saveStats(); updateStatsUI(); checkAchievements();
+  } finally {
+    executing = false;
+    document.getElementById('stopBtnLesson').classList.add('hidden');
+  }
+}
+
+async function handleRunSandbox() {
+  if (!pyReady || executing) return;
+  executing = true;
+  const code = document.getElementById('codeEditorSandbox').value;
+  const input = document.getElementById('programInputSandbox').value;
+  const outEl = document.getElementById('outputSandbox');
+  outEl.textContent = '⏳ Запуск...';
+  outEl.className = 'output';
+  try {
+    const { output, error } = await runPython(code, input);
+    let text = output || '';
+    if (error) {
+      if (text && !text.endsWith('\n')) text += '\n';
+      text += '❌ ' + error;
+      outEl.className = 'output has-content has-error';
+    } else {
+      if (!text) text = '(программа выполнилась без вывода)';
+      outEl.className = 'output has-content';
+    }
+    outEl.textContent = text;
+  } catch (e) {
+    outEl.textContent = e.message === 'timeout' ? '⏹ Превышено время выполнения (8 сек).' : 'Ошибка: ' + e.message;
+    outEl.className = 'output has-error';
+  } finally {
+    executing = false;
+  }
+}
+
+async function handleCheck() {
+  if (!pyReady || executing) return;
+  executing = true;
+  const lesson = lessons[currentLesson];
+  const code = document.getElementById('codeEditorLesson').value;
+  lessonCodes[lesson.id] = code;
+  saveCodes();
+  stats.checks++;
+  saveStats();
+  updateStatsUI();
+  
+  const fb = document.getElementById('feedback');
+  const outEl = document.getElementById('outputLesson');
+  fb.classList.add('hidden');
+  outEl.textContent = '⏳ Проверка...';
+  outEl.className = 'output';
+  
+  try {
+    const tests = [{ input: lesson.testInput || '', output: lesson.expectedOutput }];
+    if (lesson.altInputs) tests.push(...lesson.altInputs);
+    let firstOutput = '';
+    let firstError = null;
+    
+    for (let t = 0; t < tests.length; t++) {
+      const { output, error } = await runPython(code, tests[t].input);
+      if (t === 0) firstOutput = output || '';
+      if (error) {
+        if (t === 0) firstError = error;
+        break;
+      }
+      
+      let isMatch = false;
+      if (lesson.expectedOutput.includes('|')) {
+        const validOptions = lesson.expectedOutput.split('|');
+        isMatch = validOptions.includes(normalize(output));
+      } else {
+        isMatch = normalize(output) === normalize(tests[t].output);
+      }
+
+      if (!isMatch) {
+        if (t === 0) firstOutput = output || '';
+        outEl.textContent = output || '(нет вывода)';
+        outEl.className = 'output has-content';
+        fb.className = 'feedback error';
+        const label = t === 0 ? '' : `<br><small>Тест ${t + 1}: ввод «${escapeHtml(tests[t].input.replace(/\n/g, ' ⏎ '))}»</small>`;
+        fb.innerHTML = `❌ <b>Пока не совпадает.</b>${label}<br>Ожидаемый вывод:<br><pre style="background:rgba(0,0,0,0.15);padding:8px;border-radius:6px;margin-top:6px;white-space:pre-wrap">${escapeHtml(tests[t].output)}</pre>Твой вывод:<br><pre style="background:rgba(0,0,0,0.15);padding:8px;border-radius:6px;margin-top:6px;white-space:pre-wrap">${escapeHtml(normalize(output) || '(пусто)')}</pre>`;
+        fb.classList.remove('hidden');
+        executing = false;
+        setMascotMessage("Вывод не совпадает с ожидаемым. Попробуй ещё раз!", 'error');
+        return;
+      }
+    }
+    
+    if (firstError) {
+      outEl.textContent = firstOutput + (firstOutput ? '\n' : '') + '❌ ' + firstError;
+      outEl.className = 'output has-error';
+      stats.errors++; saveStats(); updateStatsUI(); checkAchievements();
+      fb.className = 'feedback error';
+      fb.innerHTML = '❌ Ошибка в коде. Прочитай сообщение выше.<br><small>Проверь отступы, кавычки, двоеточия после if/else/while/for.</small>';
+      fb.classList.remove('hidden');
+      executing = false;
+      setMascotMessage("В коде есть ошибка. Проверь кавычки и отступы!", 'error');
+      return;
+    }
+    
+    outEl.textContent = firstOutput || '(нет вывода)';
+    outEl.className = 'output has-content';
+    const wasCompleted = completed.has(lesson.id);
+    completed.add(lesson.id);
+    saveProgress();
+    updateStatsUI();
+    renderSidebar();
+    
+    if (!usedHint && !achievements.has('solo')) {
+      achievements.add('solo');
+      saveAchievements();
+      showToast('🏆 Достижение: Умник (решено без подсказок!)');
+    }
+    
+    checkAchievements();
+    
+    fb.className = 'feedback success';
+    let msg = '✅ <b>Отлично! Задание выполнено.</b>';
+    if (lesson.explanation) msg += '<div class="explain">💡 ' + lesson.explanation + '</div>';
+    if (currentLesson < lessons.length - 1) msg += '<br><button class="btn btn-next" onclick="goNext()">Следующий урок →</button>';
+    else msg += '<br><small>🎉 Это был последний урок! Ты прошёл весь курс!</small>';
+    fb.innerHTML = msg;
+    fb.classList.remove('hidden');
+    if (!wasCompleted) { showConfetti(); showToast('🎉 Урок пройден!'); }
+    else showToast('✓ Задание выполнено');
+    
+    setMascotMessage("Ура! Всё работает идеально! 🎉", 'success');
+  } catch (e) {
+    outEl.textContent = e.message === 'timeout' ? '⏹ Превышено время (8 сек).' : 'Ошибка: ' + e.message;
+    outEl.className = 'output has-error';
+    stats.errors++; saveStats(); updateStatsUI(); checkAchievements();
+  } finally {
+    executing = false;
+  }
+}
+
+function goNext() {
+  if (currentLesson < lessons.length - 1) {
+    selectLesson(currentLesson + 1);
+    document.getElementById('content').scrollTop = 0;
+  }
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+async function init() {
+  loadState();
+  renderSidebar();
+  setupTabs();
+  setupListeners();
+  setupShortcuts();
+  
+  selectLesson(0);
+  updateStatsUI();
+  renderAchievements();
+  
+  try {
+   pyodide = await loadPyodide();
+    pyReady = true;
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('runBtnLesson').disabled = false;
+    document.getElementById('checkBtnLesson').disabled = false;
+    document.getElementById('runBtnSandbox').disabled = false;
+    showToast('🐍 Python загружен, можно программировать!');
+    setMascotMessage("Python загружен! Нажми «▶ Запустить», чтобы начать.", 'success');
+  } catch (e) {
+    document.getElementById('loading').innerHTML = '<p style="color:#e74c3c">Ошибка загрузки Python: ' + e.message + '</p>';
+  }
+}
+
+function setupTabs() {
+  document.getElementById('tabLessons').addEventListener('click', () => switchTab('lessons'));
+  document.getElementById('tabSandbox').addEventListener('click', () => switchTab('sandbox'));
+}
+function switchTab(tab) {
+  currentTab = tab;
+  const isLessons = tab === 'lessons';
+  document.getElementById('tabLessons').classList.toggle('active', isLessons);
+  document.getElementById('tabSandbox').classList.toggle('active', !isLessons);
+  document.getElementById('lessonView').classList.toggle('hidden', !isLessons);
+  document.getElementById('sandboxView').classList.toggle('hidden', isLessons);
+  document.getElementById('progressWrap').style.visibility = isLessons ? 'visible' : 'hidden';
+  document.getElementById('sidebar').style.display = isLessons ? 'flex' : 'none';
+  if(isLessons) {
+    document.querySelector('main').style.gridTemplateColumns = '320px 1fr';
+  } else {
+    document.querySelector('main').style.gridTemplateColumns = '1fr';
+  }
+}
+
+function setupShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    if (!pyReady) return;
+    if (e.ctrlKey && e.key === 'Enter') {
+      e.preventDefault();
+      if (currentTab === 'lessons') { if (e.shiftKey) handleCheck(); else handleRunLesson(); }
+      else handleRunSandbox();
+    }
+  });
+}
+
+function setupListeners() {
+  document.getElementById('runBtnLesson').addEventListener('click', handleRunLesson);
+  document.getElementById('checkBtnLesson').addEventListener('click', handleCheck);
+  document.getElementById('runBtnSandbox').addEventListener('click', handleRunSandbox);
+  document.getElementById('stopBtnLesson').addEventListener('click', () => {
+    showToast('⏹ Дождись завершения или перезагрузи страницу, если код завис.');
+  });
+  
+  document.getElementById('howToSolveBtn').addEventListener('click', () => {
+    usedHint = true;
+    const box = document.getElementById('howToSolveBox');
+    const steps = lessons[currentLesson].howToSolve;
+    if (steps && steps.length > 0) {
+      box.innerHTML = '🧠 <b>План действий:</b><ol>' + steps.map(s => `<li>${s}</li>`).join('') + '</ol>';
+      box.classList.toggle('hidden');
+      if (!box.classList.contains('hidden')) setMascotMessage("Вот пошаговый план, как решить задание. Следуй ему!", 'normal');
+    }
+  });
+
+  document.getElementById('hintBtn').addEventListener('click', () => {
+    usedHint = true;
+    const box = document.getElementById('hintBox');
+    box.innerHTML = '💡 ' + lessons[currentLesson].hint;
+    box.classList.toggle('hidden');
+    if (!box.classList.contains('hidden')) setMascotMessage("Подсказка: " + lessons[currentLesson].hint, 'normal');
+  });
+  
+  document.getElementById('solutionBtn').addEventListener('click', () => {
+    usedHint = true;
+    const lesson = lessons[currentLesson];
+    const box = document.getElementById('solutionBox');
+    if (box.classList.contains('hidden')) {
+      document.getElementById('codeEditorLesson').value = lesson.solution;
+      box.innerHTML = '👁 <b>Код вставлен.</b> Попробуй прочитать его и понять.';
+      box.classList.remove('hidden');
+      setMascotMessage("Я вставил решение в редактор. Изучи его и нажми «Проверить».", 'normal');
+    } else box.classList.add('hidden');
+  });
+  
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    document.getElementById('codeEditorLesson').value = lessons[currentLesson].starter;
+    delete lessonCodes[lessons[currentLesson].id];
+    saveCodes();
+    document.getElementById('feedback').classList.add('hidden');
+    document.getElementById('hintBox').classList.add('hidden');
+    document.getElementById('howToSolveBox').classList.add('hidden');
+    document.getElementById('solutionBox').classList.add('hidden');
+    showToast('↺ Код урока восстановлен');
+    setMascotMessage("Редактор очищен. Начнём заново!", 'normal');
+  });
+  
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    document.body.classList.toggle('light');
+    const isLight = document.body.classList.contains('light');
+    document.getElementById('themeBtn').textContent = isLight ? '☀️' : '🌙';
+    safeStorage.setItem('pypath_theme_local', isLight ? 'light' : 'dark');
+  });
+  
+  document.getElementById('achieveBtn').addEventListener('click', () => {
+    renderAchievements();
+    document.getElementById('achievementsModal').classList.add('show');
+  });
+  document.getElementById('achievementsModal').addEventListener('click', (e) => {
+    if (e.target.id === 'achievementsModal') {
+      document.getElementById('achievementsModal').classList.remove('show');
+    }
+  });
+  
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    searchQuery = e.target.value;
+    renderSidebar();
+  });
+  
+  document.getElementById('clearOutputLesson').addEventListener('click', () => {
+    const el = document.getElementById('outputLesson');
+    el.textContent = '— здесь появится результат запуска —';
+    el.className = 'output';
+  });
+  document.getElementById('clearOutputSandbox').addEventListener('click', () => {
+    const el = document.getElementById('outputSandbox');
+    el.textContent = '— здесь появится результат запуска —';
+    el.className = 'output';
+  });
+  setInterval(() => {
+    const lesson = lessons[currentLesson];
+    const val = document.getElementById('codeEditorLesson').value;
+    if (lessonCodes[lesson.id] !== val) {
+      lessonCodes[lesson.id] = val;
+      saveCodes();
+    }
+  }, 3000);
+}
+
+window.goNext = goNext;
+init();
+</script>
+</body>
+</html>
